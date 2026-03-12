@@ -1,29 +1,41 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-java-with-maven
-
-name: Java CI with Maven
+name: Build and Analyze with SonarCloud
 
 on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    types: [opened, synchronize, reopened] # Важливо для аналізу Pull Request'ів
 
 jobs:
   build:
-
+    name: Build and analyze
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java: [ '17' ]
 
     steps:
+      # 1. Завантаження коду з повною історією (обов'язково для SonarCloud)
       - uses: actions/checkout@v4
-      - name: Set up JDK ${{matrix.java}}
+        with:
+          fetch-depth: 0
+
+      # 2. Налаштування Java 17 та автоматичне кешування залежностей Maven
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: ${{matrix.java}}
-          distribution: 'adopt'
+          java-version: '17'
+          distribution: 'temurin' # Сучасна альтернатива 'adopt'
           cache: maven
-      - name: Build with Maven Wrapper
-        run: ./mvnw -B verify
+
+      # 3. Кешування пакетів SonarQube для пришвидшення наступних збірок
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      # 4. Збірка, запуск тестів (генерування покриття) та відправка в SonarCloud
+      - name: Build and analyze
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Стандартний токен GitHub (генерується автоматично)
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Ваш токен SonarCloud із секретів репозиторію
+        run: ./mvnw -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=GRENI-BENI_spring-petclinic
