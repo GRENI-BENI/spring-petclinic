@@ -39,4 +39,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Стандартний токен GitHub (генерується автоматично)
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Ваш токен SonarCloud із секретів репозиторію
-        run: ./mvnw -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=GRENI-BENI_spring-petclinic
+        run: ./mvnw -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=GRENI-BENI_spring-petclinic -Dsonar.sources=src/main/java,src/main/resources
